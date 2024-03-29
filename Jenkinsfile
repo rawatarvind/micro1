@@ -1,24 +1,34 @@
 pipeline {
+    environment {
+        dockerimagename = "ashurawat123/nodeapp"
+        dockerImage = ""
+        registryCredential = 'dockerhublogin'
+    }
+     
     agent any
-
-    stages {
-        stage('Deploy Pod') {
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    metadata:
-                      name: my-pod
-                    spec:
-                      containers:
-                      - name: nginx
-                        image: nginx
-                    """
+     
+    stages { 
+        stage('Checkout Source') {
+            steps {
+                git 'https://github.com/rawatarvind/micro1.git'
+            }
+        }
+         
+        stage('Build image') {
+            steps {
+                script {
+                    dockerImage = docker.build dockerimagename
                 }
             }
+        }
+         
+        stage('Pushing Image') {
             steps {
-                sh 'echo hello > /usr/share/nginx/html/index.html'
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
+                        dockerImage.push("latest")
+                    }
+                }
             }
         }
     }
