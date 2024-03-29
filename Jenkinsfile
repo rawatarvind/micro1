@@ -1,45 +1,43 @@
 pipeline {
-     environment {
-         dockerimagename = "ashurawat123/nodeapp"
-         dockerImage = ""
-     }
+    environment {
+        dockerimagename = "ashurawat123/nodeapp"
+        dockerImage = ""
+        registryCredential = 'dockerhublogin'
+    }
      
-     agent any
+    agent any
      
-     stages { 
+    stages { 
+        stage('Checkout Source') {
+            steps {
+                git 'https://github.com/rawatarvind/micro1.git'
+            }
+        }
          
-         stage('Checkout Source') {
-             steps {
-                 git 'https://github.com/rawatarvind/micro1.git'
-             }
-         }
-         
-         stage('Build image') {
-             steps{
-                 script {
-                     dockerImage = docker.build dockerimagename
-                 }
-             }
-         }
-         
-         stage('Pushing Image') {
-             environment {
-                 registryCredential = 'dockerhublogin'
-             }
-            steps{
+        stage('Build image') {
+            steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', registryCredential ) {
+                    dockerImage = docker.build dockerimagename
+                }
+            }
+        }
+         
+        stage('Pushing Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
                         dockerImage.push("latest")
                     }
                 }
             }
-         }
-         
-         stage('Deploying App to Kubernetes') {
-             steps {
-                 script {
-                     kubernetesDeploy(configs: "deployment.yaml",kubeconfigId: "minikube")
-                 }
-             }
-         }
+        }
+
+        stage('Deploying App to Kubernetes') {
+            steps {
+                script {
+                    kubernetesDeploy(configs: "deployment.yaml", kubeconfigId: "minikube")
+                }
+            }
+        }
+    }
 }
